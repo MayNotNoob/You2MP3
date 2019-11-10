@@ -42,7 +42,7 @@ namespace U2MP3.ViewModels
             get { return _playCommand ??= new RelayCommand(e => DoPlayCommand(), p => true); }
         }
 
-        private async void DoPlayCommand()
+        private void DoPlayCommand()
         {
             var tmpMusic = SelectedMusic;
             if (Equals(_audioPlayer.Music, tmpMusic))

@@ -11,14 +11,14 @@ namespace U2MP3.AudioEngine
 {
     public class AudioPlayer
     {
-        private readonly object waveOutLock;
-        private readonly SynchronizationContext syncContext;
-        private IntPtr hWaveOut;
-        private AudioBuffer[] buffers;
-        private IWaveProvider waveStream;
-        private volatile PlaybackState playbackState;
-        private AutoResetEvent callbackEvent;
-        private bool shouldFireEvent = true;
+        private readonly object _waveOutLock;
+        private readonly SynchronizationContext _syncContext;
+        private IntPtr _hWaveOut;
+        private AudioBuffer[] _buffers;
+        private IWaveProvider _waveStream;
+        private volatile PlaybackState _playbackState;
+        private AutoResetEvent _callbackEvent;
+        private bool _shouldFireEvent = true;
         private readonly YoutubeClient _youtubeClient;
         /// <summary>Indicates playback has stopped automatically</summary>
         public event EventHandler<StoppedEventArgs> PlaybackStopped;
@@ -50,12 +50,12 @@ namespace U2MP3.AudioEngine
         public AudioPlayer(YoutubeClient youtubeClient)
         {
             _youtubeClient = youtubeClient;
-            this.syncContext = SynchronizationContext.Current;
-            if (this.syncContext != null && (this.syncContext.GetType().Name == "LegacyAspNetSynchronizationContext" || this.syncContext.GetType().Name == "AspNetSynchronizationContext"))
-                this.syncContext = (SynchronizationContext)null;
+            this._syncContext = SynchronizationContext.Current;
+            if (this._syncContext != null && (this._syncContext.GetType().Name == "LegacyAspNetSynchronizationContext" || this._syncContext.GetType().Name == "AspNetSynchronizationContext"))
+                this._syncContext = (SynchronizationContext)null;
             this.DesiredLatency = 300;
             this.NumberOfBuffers = 2;
-            this.waveOutLock = new object();
+            this._waveOutLock = new object();
         }
 
 
@@ -65,47 +65,47 @@ namespace U2MP3.AudioEngine
         public async void Play()
         {
             Music.ImageState = ImageState.PLAYING;
-            if (this.playbackState != PlaybackState.Paused)
+            if (this._playbackState != PlaybackState.Paused)
                 await RetrieveMusicInfo();
-            if (this.buffers == null || this.waveStream == null)
+            if (this._buffers == null || this._waveStream == null)
                 throw new InvalidOperationException("Must call Init first");
-            if (this.playbackState == PlaybackState.Stopped)
+            if (this._playbackState == PlaybackState.Stopped)
             {
-                shouldFireEvent = true;
-                this.playbackState = PlaybackState.Playing;
-                this.callbackEvent.Set();
+                _shouldFireEvent = true;
+                this._playbackState = PlaybackState.Playing;
+                this._callbackEvent.Set();
                 ThreadPool.QueueUserWorkItem((WaitCallback)(state => this.PlaybackThread()), (object)null);
             }
             else
             {
-                if (this.playbackState != PlaybackState.Paused)
+                if (this._playbackState != PlaybackState.Paused)
                     return;
                 this.Resume();
-                this.callbackEvent.Set();
+                this._callbackEvent.Set();
             }
         }
         /// <summary>Initialises the WaveOut device</summary>
         /// <param name="waveProvider">WaveProvider to play</param>
         private void Init(IWaveProvider waveProvider)
         {
-            if (this.playbackState != PlaybackState.Stopped)
+            if (this._playbackState != PlaybackState.Stopped)
                 throw new InvalidOperationException("Can't re-initialize during playback");
-            if (this.hWaveOut != IntPtr.Zero)
+            if (this._hWaveOut != IntPtr.Zero)
             {
                 this.DisposeBuffers();
                 this.CloseWaveOut();
             }
-            this.callbackEvent = new AutoResetEvent(false);
-            this.waveStream = waveProvider;
+            this._callbackEvent = new AutoResetEvent(false);
+            this._waveStream = waveProvider;
             int byteSize = waveProvider.WaveFormat.ConvertLatencyToByteSize((this.DesiredLatency + this.NumberOfBuffers - 1) / this.NumberOfBuffers);
             MmResult result;
-            lock (this.waveOutLock)
-                result = AudioInterop.waveOutOpenWindow(out this.hWaveOut, (IntPtr)this.DeviceNumber, this.waveStream.WaveFormat, this.callbackEvent.SafeWaitHandle.DangerousGetHandle(), IntPtr.Zero, AudioInterop.WaveInOutOpenFlags.CallbackEvent);
+            lock (this._waveOutLock)
+                result = AudioInterop.waveOutOpenWindow(out this._hWaveOut, (IntPtr)this.DeviceNumber, this._waveStream.WaveFormat, this._callbackEvent.SafeWaitHandle.DangerousGetHandle(), IntPtr.Zero, AudioInterop.WaveInOutOpenFlags.CallbackEvent);
             MmException.Try(result, "waveOutOpen");
-            this.buffers = new AudioBuffer[this.NumberOfBuffers];
-            this.playbackState = PlaybackState.Stopped;
+            this._buffers = new AudioBuffer[this.NumberOfBuffers];
+            this._playbackState = PlaybackState.Stopped;
             for (int index = 0; index < this.NumberOfBuffers; ++index)
-                this.buffers[index] = new AudioBuffer(this.hWaveOut, byteSize, this.waveStream, this.waveOutLock);
+                this._buffers[index] = new AudioBuffer(this._hWaveOut, byteSize, this._waveStream, this._waveOutLock);
         }
 
 
@@ -133,32 +133,32 @@ namespace U2MP3.AudioEngine
             }
             finally
             {
-                this.playbackState = PlaybackState.Stopped;
-                if (shouldFireEvent)
+                this._playbackState = PlaybackState.Stopped;
+                if (_shouldFireEvent)
                     this.RaisePlaybackStoppedEvent(e);
             }
         }
 
         private void DoPlayback()
         {
-            while (this.playbackState != PlaybackState.Stopped)
+            while (this._playbackState != PlaybackState.Stopped)
             {
-                if (!this.callbackEvent.WaitOne(this.DesiredLatency))
+                if (!this._callbackEvent.WaitOne(this.DesiredLatency))
                 {
-                    int playbackState = (int)this.playbackState;
+                    int playbackState = (int)this._playbackState;
                 }
-                if (this.playbackState == PlaybackState.Playing)
+                if (this._playbackState == PlaybackState.Playing)
                 {
                     int num = 0;
-                    foreach (AudioBuffer buffer in this.buffers)
+                    foreach (AudioBuffer buffer in this._buffers)
                     {
                         if (buffer.InQueue || buffer.OnDone())
                             ++num;
                     }
                     if (num == 0)
                     {
-                        this.playbackState = PlaybackState.Stopped;
-                        this.callbackEvent.Set();
+                        this._playbackState = PlaybackState.Stopped;
+                        this._callbackEvent.Set();
                     }
                 }
             }
@@ -167,13 +167,13 @@ namespace U2MP3.AudioEngine
         /// <summary>Pause the audio</summary>
         public void Pause()
         {
-            if (this.playbackState != PlaybackState.Playing)
+            if (this._playbackState != PlaybackState.Playing)
                 return;
-            this.playbackState = PlaybackState.Paused;
+            this._playbackState = PlaybackState.Paused;
             Music.ImageState = ImageState.PAUSE;
             MmResult result;
-            lock (this.waveOutLock)
-                result = AudioInterop.waveOutPause(this.hWaveOut);
+            lock (this._waveOutLock)
+                result = AudioInterop.waveOutPause(this._hWaveOut);
             if (result != MmResult.NoError)
                 throw new MmException(result, "waveOutPause");
         }
@@ -181,19 +181,19 @@ namespace U2MP3.AudioEngine
         /// <summary>Resume playing after a pause from the same position</summary>
         private void Resume()
         {
-            if (this.playbackState != PlaybackState.Paused)
+            if (this._playbackState != PlaybackState.Paused)
                 return;
             MmResult result;
-            lock (this.waveOutLock)
-                result = AudioInterop.waveOutRestart(this.hWaveOut);
+            lock (this._waveOutLock)
+                result = AudioInterop.waveOutRestart(this._hWaveOut);
             if (result != MmResult.NoError)
                 throw new MmException(result, "waveOutRestart");
-            this.playbackState = PlaybackState.Playing;
+            this._playbackState = PlaybackState.Playing;
         }
 
         public void StopWithoutEvent()
         {
-            shouldFireEvent = false;
+            _shouldFireEvent = false;
             Music.ImageState = ImageState.STOP;
             Stop();
         }
@@ -201,15 +201,15 @@ namespace U2MP3.AudioEngine
         /// <summary>Stop and reset the WaveOut device</summary>
         public void Stop()
         {
-            if (this.playbackState == PlaybackState.Stopped)
+            if (this._playbackState == PlaybackState.Stopped)
                 return;
-            this.playbackState = PlaybackState.Stopped;
+            this._playbackState = PlaybackState.Stopped;
             MmResult result;
-            lock (this.waveOutLock)
-                result = AudioInterop.waveOutReset(this.hWaveOut);
+            lock (this._waveOutLock)
+                result = AudioInterop.waveOutReset(this._hWaveOut);
             if (result != MmResult.NoError)
                 throw new MmException(result, "waveOutReset");
-            this.callbackEvent.Set();
+            this._callbackEvent.Set();
         }
 
         /// <summary>
@@ -220,7 +220,7 @@ namespace U2MP3.AudioEngine
         /// <returns>Position in bytes</returns>
         public long GetPosition()
         {
-            return AudioUtils.GetPositionBytes(this.hWaveOut, this.waveOutLock);
+            return AudioUtils.GetPositionBytes(this._hWaveOut, this._waveOutLock);
         }
 
         /// <summary>
@@ -230,7 +230,7 @@ namespace U2MP3.AudioEngine
         {
             get
             {
-                return this.waveStream.WaveFormat;
+                return this._waveStream.WaveFormat;
             }
         }
 
@@ -239,7 +239,7 @@ namespace U2MP3.AudioEngine
         {
             get
             {
-                return this.playbackState;
+                return this._playbackState;
             }
         }
 
@@ -248,11 +248,11 @@ namespace U2MP3.AudioEngine
         {
             get
             {
-                return AudioUtils.GetWaveOutVolume(this.hWaveOut, this.waveOutLock);
+                return AudioUtils.GetWaveOutVolume(this._hWaveOut, this._waveOutLock);
             }
             set
             {
-                AudioUtils.SetWaveOutVolume(value, this.hWaveOut, this.waveOutLock);
+                AudioUtils.SetWaveOutVolume(value, this._hWaveOut, this._waveOutLock);
             }
         }
 
@@ -275,27 +275,27 @@ namespace U2MP3.AudioEngine
 
         private void CloseWaveOut()
         {
-            if (this.callbackEvent != null)
+            if (this._callbackEvent != null)
             {
-                this.callbackEvent.Close();
-                this.callbackEvent = (AutoResetEvent)null;
+                this._callbackEvent.Close();
+                this._callbackEvent = (AutoResetEvent)null;
             }
-            lock (this.waveOutLock)
+            lock (this._waveOutLock)
             {
-                if (!(this.hWaveOut != IntPtr.Zero))
+                if (!(this._hWaveOut != IntPtr.Zero))
                     return;
-                int num = (int)AudioInterop.waveOutClose(this.hWaveOut);
-                this.hWaveOut = IntPtr.Zero;
+                int num = (int)AudioInterop.waveOutClose(this._hWaveOut);
+                this._hWaveOut = IntPtr.Zero;
             }
         }
 
         private void DisposeBuffers()
         {
-            if (this.buffers == null)
+            if (this._buffers == null)
                 return;
-            foreach (AudioBuffer buffer in this.buffers)
+            foreach (AudioBuffer buffer in this._buffers)
                 buffer.Dispose();
-            this.buffers = (AudioBuffer[])null;
+            this._buffers = (AudioBuffer[])null;
         }
 
         /// <summary>
@@ -311,10 +311,10 @@ namespace U2MP3.AudioEngine
             EventHandler<StoppedEventArgs> handler = this.PlaybackStopped;
             if (handler == null)
                 return;
-            if (this.syncContext == null)
+            if (this._syncContext == null)
                 handler((object)this, new StoppedEventArgs(e));
             else
-                this.syncContext.Post((SendOrPostCallback)(state => handler((object)this, new StoppedEventArgs(e))), (object)null);
+                this._syncContext.Post((SendOrPostCallback)(state => handler((object)this, new StoppedEventArgs(e))), (object)null);
         }
     }
 }
