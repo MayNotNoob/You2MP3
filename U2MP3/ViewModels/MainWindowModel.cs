@@ -1,19 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Google.Apis.YouTube.v3.Data;
+using NAudio.Wave;
+using System;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using Google.Apis.YouTube.v3.Data;
-using NAudio.Wave;
+using MaterialDesignThemes.Wpf;
 using U2MP3.AudioEngine;
 using U2MP3.Models;
 using U2MP3.UServices;
 using You2MP3.ViewModels;
-using YoutubeExplode;
-using YoutubeExplode.Models.MediaStreams;
 
 namespace U2MP3.ViewModels
 {
@@ -23,6 +19,7 @@ namespace U2MP3.ViewModels
         private ICommand _searchCommand;
         private ObservableCollection<Music> _searchResults;
         private ICommand _playCommand;
+        private ICommand _stopCommand;
         private readonly AudioPlayer _audioPlayer;
         public MainWindowModel(UService searchService, AudioPlayer player)
         {
@@ -30,6 +27,7 @@ namespace U2MP3.ViewModels
             _audioPlayer = player;
             SearchResults = new ObservableCollection<Music>();
             _audioPlayer.PlaybackStopped += OnWaveOutEventOnPlaybackStopped;
+            DoSearchCommand("周杰伦");
         }
 
         public ICommand SearchCommand
@@ -37,6 +35,13 @@ namespace U2MP3.ViewModels
             get { return _searchCommand ??= new RelayCommand(e => DoSearchCommand(Content), p => true); }
         }
 
+        public ICommand StopCommand
+        {
+            get
+            {
+                return _stopCommand ??= new RelayCommand(e => DoStopCommand(), p => true);
+            }
+        }
         public ICommand PlayCommand
         {
             get { return _playCommand ??= new RelayCommand(e => DoPlayCommand(), p => true); }
@@ -53,8 +58,6 @@ namespace U2MP3.ViewModels
                         _audioPlayer.Pause();
                         break;
                     case PlaybackState.Paused:
-                        _audioPlayer.Play();
-                        break;
                     case PlaybackState.Stopped:
                         _audioPlayer.Play();
                         break;
@@ -70,11 +73,17 @@ namespace U2MP3.ViewModels
             }
         }
 
+        private void DoStopCommand()
+        {
+            if(_audioPlayer!=null && _audioPlayer.PlaybackState == PlaybackState.Playing && Equals(SelectedMusic, _audioPlayer.Music))
+                _audioPlayer.Stop();
+        }
+
         private void OnWaveOutEventOnPlaybackStopped(object sender, StoppedEventArgs args)
         {
             var player = (AudioPlayer)sender;
             if (player.Music != null)
-                player.Music.ImageState = ImageState.STOP;
+                player.Music.IconKind = PackIconKind.PlayCircleOutline;
         }
         public string Content { get; set; }
 
@@ -90,31 +99,38 @@ namespace U2MP3.ViewModels
         private async void DoSearchCommand(string content)
         {
             if (SearchResults.Any()) SearchResults.Clear();
-            SearchListResponse response = await _searchService.SearchMusicByKeyWords(content);
-            if (Application.Current.Dispatcher != null)
-                await Application.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    foreach (SearchResult searchResult in response.Items)
+            try
+            {
+                SearchListResponse response = await _searchService.SearchMusicByKeyWords(content);
+                if (Application.Current.Dispatcher != null)
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
                     {
-                        string id = null;
-                        switch (searchResult.Id.Kind)
+                        foreach (SearchResult searchResult in response.Items)
                         {
-                            case "youtube#video":
-                                id = searchResult.Id.VideoId;
-                                break;
+                            string id = null;
+                            switch (searchResult.Id.Kind)
+                            {
+                                case "youtube#video":
+                                    id = searchResult.Id.VideoId;
+                                    break;
 
-                            case "youtube#channel":
-                                id = searchResult.Id.ChannelId;
-                                break;
+                                case "youtube#channel":
+                                    id = searchResult.Id.ChannelId;
+                                    break;
 
-                                //case "youtube#playlist":
-                                //    id = searchResult.Id.PlaylistId;
-                                //    break;
+                                    //case "youtube#playlist":
+                                    //    id = searchResult.Id.PlaylistId;
+                                    //    break;
+                            }
+                            if (!string.IsNullOrEmpty(id))
+                                SearchResults.Add(new Music(id, searchResult.Snippet.Title, searchResult.Snippet.Thumbnails.Default__.Url, searchResult.Id.Kind));
                         }
-                        if (!string.IsNullOrEmpty(id))
-                            SearchResults.Add(new Music(id, searchResult.Snippet.Title, searchResult.Snippet.Thumbnails.Default__.Url, searchResult.Id.Kind));
-                    }
-                });
+                    });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to search music {ex.Message}", "ERROR");
+            }
         }
 
         #endregion

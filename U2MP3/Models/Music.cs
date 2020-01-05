@@ -3,13 +3,14 @@ using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Windows;
+using MaterialDesignThemes.Wpf;
 using SharpVectors.Converters;
 
 namespace U2MP3.Models
 {
     public class Music : INotifyPropertyChanged
     {
-        private ImageState _imageState;
+        private PackIconKind iconKind;
 
         public Music(string id, string title, string thumbnailUrl, string kind)
         {
@@ -17,7 +18,7 @@ namespace U2MP3.Models
             Title = title;
             ThumbnailUrl = thumbnailUrl;
             Kind = kind;
-            ImageState = ImageState.STOP;
+            IconKind = PackIconKind.PlayCircleOutline;
         }
 
         public string Id { get; set; }
@@ -25,13 +26,13 @@ namespace U2MP3.Models
         public string ThumbnailUrl { get; set; }
         public string Kind { get; set; }
         public string SourceUrl { get; set; }
-        public ImageState ImageState
+        public PackIconKind IconKind
         {
-            get => _imageState;
+            get => iconKind;
             set
             {
-                _imageState = value;
-                OnPropertyChanged(nameof(ImageState));
+                iconKind = value;
+                OnPropertyChanged(nameof(IconKind));
             }
         }
 
@@ -84,42 +85,42 @@ namespace U2MP3.Models
         }
     }
 
-    [TypeConverter(typeof(StateToUriConverter))]
-    public enum ImageState
-    {
-        [Description("./Assets/pause-button.svg")]
-        PLAYING,
-        [Description("./Assets/play-button.svg")]
-        STOP,
-        [Description("./Assets/play-button.svg")]
-        PAUSE
-    }
+    //[TypeConverter(typeof(StateToUriConverter))]
+    //public enum IconKind
+    //{
+    //    [Description("PlayCircleOutline")]
+    //    PLAYING,
+    //    [Description("StopCircleOutline")]
+    //    STOP,
+    //    [Description("PauseCircleOutline")]
+    //    PAUSE
+    //}
 
-    public class SvgViewboxAttachedProperties : DependencyObject
-    {
-        public static string GetSource(DependencyObject obj)
-        {
-            return (string)obj.GetValue(SourceProperty);
-        }
+    //public class PackIconAttachedProperties : DependencyObject
+    //{
+    //    public static string GetSource(DependencyObject obj)
+    //    {
+    //        return (string)obj.GetValue(SourceProperty);
+    //    }
 
-        public static void SetSource(DependencyObject obj, string value)
-        {
-            obj.SetValue(SourceProperty, value);
-        }
+    //    public static void SetSource(DependencyObject obj, string value)
+    //    {
+    //        obj.SetValue(SourceProperty, value);
+    //    }
 
-        private static void OnSourceChanged(DependencyObject obj, DependencyPropertyChangedEventArgs e)
-        {
-            if (obj is SvgViewbox svgControl)
-            {
-                var path = (string)e.NewValue;
-                svgControl.Source = new Uri(path, UriKind.Relative);
-            }
-        }
+    //    private static void OnKindChanged(DependencyObject obj, DependencyPropertyChangedEventArgs e)
+    //    {
+    //        if (obj is PackIcon packIcon)
+    //        {
+    //            var path = (string)e.NewValue;
+    //            packIcon.Kind = PackIconKind.AbTesting;
+    //        }
+    //    }
 
-        public static readonly DependencyProperty SourceProperty =
-            DependencyProperty.RegisterAttached("Source",
-                typeof(string), typeof(SvgViewboxAttachedProperties),
-                // default value: null
-                new PropertyMetadata(null, OnSourceChanged));
-    }
+    //    public static readonly DependencyProperty SourceProperty =
+    //        DependencyProperty.RegisterAttached("Kind",
+    //            typeof(string), typeof(PackIconAttachedProperties),
+    //            // default value: null
+    //            new PropertyMetadata(null, OnKindChanged));
+    //}
 }

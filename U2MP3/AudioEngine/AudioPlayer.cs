@@ -3,6 +3,8 @@ using NAudio.Wave;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
+using MaterialDesignThemes.Wpf;
 using U2MP3.Models;
 using YoutubeExplode;
 using YoutubeExplode.Models.MediaStreams;
@@ -64,9 +66,22 @@ namespace U2MP3.AudioEngine
         /// <summary>Start playing the audio from the WaveStream</summary>
         public async void Play()
         {
-            Music.ImageState = ImageState.PLAYING;
+            Music.IconKind = PackIconKind.PauseCircleOutline;
             if (this._playbackState != PlaybackState.Paused)
-                await RetrieveMusicInfo();
+            {
+                Music.SourceUrl = await RetrieveMusicInfo();
+                if (Music.SourceUrl != null)
+                {
+                    var mf = new MediaFoundationReader(Music.SourceUrl);
+                    Init(mf);
+                }
+                else
+                {
+                    Music.IconKind = PackIconKind.PlayCircleOutline;
+                    MessageBox.Show("No audio data found for this video", "ALERT");
+                    return;
+                }
+            }
             if (this._buffers == null || this._waveStream == null)
                 throw new InvalidOperationException("Must call Init first");
             if (this._playbackState == PlaybackState.Stopped)
@@ -108,18 +123,17 @@ namespace U2MP3.AudioEngine
                 this._buffers[index] = new AudioBuffer(this._hWaveOut, byteSize, this._waveStream, this._waveOutLock);
         }
 
-
-        private async Task RetrieveMusicInfo()
+        private async Task<String> RetrieveMusicInfo()
         {
             if (string.IsNullOrEmpty(Music.SourceUrl))
             {
                 MediaStreamInfoSet infoSet = await _youtubeClient.GetVideoMediaStreamInfosAsync(Music.Id);
                 AudioStreamInfo info = infoSet.Audio.WithHighestBitrate();
-                Music.SourceUrl = info.Url;
+                return info?.Url;
             }
-            var mf = new MediaFoundationReader(Music.SourceUrl);
-            Init(mf);
+            return Music.SourceUrl;
         }
+
         private void PlaybackThread()
         {
             Exception e = (Exception)null;
@@ -170,7 +184,7 @@ namespace U2MP3.AudioEngine
             if (this._playbackState != PlaybackState.Playing)
                 return;
             this._playbackState = PlaybackState.Paused;
-            Music.ImageState = ImageState.PAUSE;
+            Music.IconKind = PackIconKind.PlayCircleOutline;
             MmResult result;
             lock (this._waveOutLock)
                 result = AudioInterop.waveOutPause(this._hWaveOut);
@@ -194,7 +208,7 @@ namespace U2MP3.AudioEngine
         public void StopWithoutEvent()
         {
             _shouldFireEvent = false;
-            Music.ImageState = ImageState.STOP;
+            Music.IconKind = PackIconKind.PlayCircleOutline;
             Stop();
         }
 
