@@ -27,7 +27,7 @@
                 </LinearGradientBrush>
             </Grid.OpacityMask>
             <Grid.Background>
-                <ImageBrush ImageSource="greenbubble.jpg" Stretch="UniformToFill" AlignmentY="Top" Opacity="0.8"></ImageBrush>
+                <ImageBrush ImageSource="Assets/greenbubble.jpg" Stretch="UniformToFill" AlignmentY="Top" Opacity="0.8"/>
             </Grid.Background>
         </Grid>
         <Grid Grid.Column="0">
@@ -172,12 +172,6 @@
                                 </Grid.RowDefinitions>
                                 <Image Source="{Binding ThumbnailUrl}" Width="70" Stretch="UniformToFill"/>
                                 <TextBlock Grid.Column="1" Text="{Binding Title}"  VerticalAlignment="Center" Margin="0,0,5,0"></TextBlock>
-                              
-                                <!--<Button Grid.Column="2" Width="40" Height="40" 
-                                        Background="Transparent" BorderThickness="0" HorizontalContentAlignment="Center"
-                                        Command="{Binding DataContext.PlayCommand, RelativeSource={RelativeSource AncestorType=ListBox}}">
-                                    <svgc:SvgViewbox Height="20" Width="20" Margin="-12 0 0 0" models:SvgViewboxAttachedProperties.Source="{Binding Path=ImageState, Mode=TwoWay}"></svgc:SvgViewbox>
-                                </Button>-->
                                 <Button  Grid.Column="2" 
                                          Command="{Binding DataContext.PlayCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
                                          Style="{StaticResource MaterialDesignFloatingActionMiniDarkButton}" Background="Transparent" BorderBrush="Transparent">
@@ -193,96 +187,11 @@
                                          Style="{StaticResource MaterialDesignFloatingActionMiniDarkButton}" Background="Transparent" BorderBrush="Transparent">
                                     <materialDesign:PackIcon Kind="CloudDownloadOutline" Foreground="DarkSlateBlue" Width="30" Height="30" VerticalAlignment="Center"/>
                                 </Button>
-                                <!--<Button Grid.Column="3" Width="40" Height="40" Background="Transparent" BorderThickness="0">
-                                    <svgc:SvgViewbox Source="Assets/stop-button.svg"></svgc:SvgViewbox>
-                                </Button>-->
                             </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
-
-                    <!--<StackPanel Orientation="Horizontal">
-                        <Image Source="Assets/greenbubble.jpg" Stretch="UniformToFill" Width="50" Height="50"></Image>
-                        <TextBlock Text="this is a description of music" VerticalAlignment="Center"></TextBlock>
-                        <Button Style="{StaticResource MaterialDesignFloatingActionMiniDarkButton}" Background="Transparent" BorderBrush="Transparent">
-                           <materialDesign:PackIcon Kind="PlayCircleOutline" Foreground="DarkSlateBlue" Width="30" Height="30" VerticalAlignment="Center"/>
-                        </Button>
-                        <materialDesign:PackIcon Kind="StopCircleOutline"  Foreground="DarkSlateBlue" Width="30" Height="30" VerticalAlignment="Center"/>
-                        <materialDesign:PackIcon Kind="PauseCircleOutline" Foreground="DarkSlateBlue" Width="30" Height="30" VerticalAlignment="Center"/>
-                    </StackPanel>-->
-
                 </ListBox>
             </Grid>
         </Grid>
     </Grid>
-
-
-    <!--<Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="20"/>
-            <RowDefinition Height="40"/>
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <DockPanel Grid.Row="0" HorizontalAlignment="Stretch">
-            <Button Command="{Binding SearchCommand}">Search</Button>
-            <TextBox  HorizontalAlignment="Stretch" Text="{Binding Content,Mode=OneWayToSource}"/>
-        </DockPanel>
-        <Grid Grid.Row="1" Height="40">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width=".25*"></ColumnDefinition>
-                <ColumnDefinition Width=".25*"></ColumnDefinition>
-                <ColumnDefinition Width=".25*"></ColumnDefinition>
-                <ColumnDefinition Width=".25*"></ColumnDefinition>
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="20"></RowDefinition>
-                <RowDefinition Height="20"></RowDefinition>
-            </Grid.RowDefinitions>
-            <Button Grid.Column="0" Grid.Row="0" Margin="0,0,1,0">Film</Button>
-            <Button Grid.Column="1" Grid.Row="0" Margin="0,0,1,0">Urban</Button>
-            <Button Grid.Column="2" Grid.Row="0" Margin="0,0,1,0">Classic</Button>
-            <Button Grid.Column="3" Grid.Row="0" Margin="0,0,0,0">Hot</Button>
-            <Button Grid.Column="0" Grid.Row="1" Margin="0,0,1,0">R&amp;B</Button>
-            <Button Grid.Column="1" Grid.Row="1" Margin="0,0,1,0">Light</Button>
-            <Button Grid.Column="2" Grid.Row="1" Margin="0,0,1,0">Sport</Button>
-            <Button Grid.Column="3" Grid.Row="1" Margin="0,0,0,0">DJ</Button>
-        </Grid>
-        <ListBox Grid.Row="2" ItemsSource="{Binding SearchResults}" Name="ListBox" HorizontalAlignment="Stretch"
-                 HorizontalContentAlignment="Stretch" SelectedItem="{Binding SelectedMusic, Mode=OneWayToSource}">
-            <ListBox.ItemContainerStyle>
-                <Style TargetType="ListBoxItem">
-                    <Style.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="IsSelected" Value="True"></Setter>
-                        </Trigger>
-                    </Style.Triggers>
-                </Style>
-            </ListBox.ItemContainerStyle>
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"></ColumnDefinition>
-                            <ColumnDefinition Width="*" MinWidth="200"></ColumnDefinition>
-                            <ColumnDefinition  Width="Auto"></ColumnDefinition>
-                            <ColumnDefinition Width="Auto"></ColumnDefinition>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="50"></RowDefinition>
-                        </Grid.RowDefinitions>
-                        <Image Source="{Binding ThumbnailUrl}"/>
-                        <TextBlock Grid.Column="1" Text="{Binding Title}"  VerticalAlignment="Center" Margin="0,0,5,0"></TextBlock>
-                        <Button Grid.Column="2" MaxWidth="40" MaxHeight="40" 
-                                Background="Transparent" BorderThickness="0"
-                                Command="{Binding DataContext.PlayCommand, RelativeSource={RelativeSource AncestorType=ListBox}}">
-                            <svgc:SvgViewbox  models:SvgViewboxAttachedProperties.Source="{Binding Path=ImageState, Mode=TwoWay}"></svgc:SvgViewbox>
-                        </Button>
-                        <Button Grid.Column="3" MaxWidth="40" MaxHeight="40" Background="Transparent" BorderThickness="0">
-                            <svgc:SvgViewbox Source="Assets/stop-button.svg"></svgc:SvgViewbox>
-                        </Button>
-                    </Grid>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
-    </Grid>-->
-
 </Window>
